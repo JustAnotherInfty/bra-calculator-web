@@ -49,6 +49,9 @@ jobs:
     needs:
       - check_fmt
       - check_clippy
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout reposistory
         uses: actions/checkout@main
