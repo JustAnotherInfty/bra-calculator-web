@@ -1,0 +1,27 @@
+<!-- SPDX-FileCopyrightText: © 2026 JustAnotherInfty -->
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>bra-calculator-web</title>
+
+    
+<script type="module">
+import init, * as bindings from '/bra-calculator-web/bra-calculator-web-68211313a189522.js';
+const wasm = await init({ module_or_path: '/bra-calculator-web/bra-calculator-web-68211313a189522_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script>
+  <link rel="modulepreload" href="/bra-calculator-web/bra-calculator-web-68211313a189522.js" crossorigin="anonymous" integrity="sha384-nbwYXEtmDHcipbjossHUxol81tHOMDAu331u+ZLFVurtIGZvQqY2lXOaGFhhwYI3"><link rel="preload" href="/bra-calculator-web/bra-calculator-web-68211313a189522_bg.wasm" crossorigin="anonymous" integrity="sha384-uvaAIWo8yqyBYqyUd6bVchMrwi1tbrlOZUVy4P4MBcbKbs5ykrQFncWJspvT6gzT" as="fetch" type="application/wasm"></head>
+
+  <body>
+  </body>
+</html>
