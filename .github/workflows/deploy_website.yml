@@ -1,0 +1,76 @@
+name: Continuous deployment
+
+on:
+  push:
+  pull_request:
+
+env:
+  RUSTFLAGS: "-D warnings"
+  RUSTDOCFLAGS: "-D warnings"
+
+jobs:
+  check_fmt:
+    name: Check format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout reposistory
+        uses: actions/checkout@main
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup rustfmt
+        run: rustup component add rustfmt
+
+      - name: Check format
+        run: cargo fmt --check
+
+  check_clippy:
+    name: Check clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout reposistory
+        uses: actions/checkout@main
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup clippy
+        run: rustup component add clippy
+
+      - name: Run clippy
+        run: cargo clippy --all-targets
+
+  deploy_site:
+    name: Deploy site to Github Pages
+    runs-on: ubuntu-latest
+    needs:
+      - check_fmt
+      - check_clippy
+    steps:
+      - name: Checkout reposistory
+        uses: actions/checkout@main
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Setup trunk
+        uses: jetli/trunk-action@main
+        with:
+          version: 'latest'
+
+      - name: Build
+        run: |
+          trunk build --release --locked --public-url /${{ github.event.repository.name }}
+
+      - name: Deployment
+        uses: peaceiris/actions-gh-pages@v4
+        # Only deploy in main branch
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
