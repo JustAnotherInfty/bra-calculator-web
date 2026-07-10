@@ -6,37 +6,25 @@ use std::sync::Arc;
 use web_sys::HtmlInputElement;
 use yew::{Component, Context, Html, TargetCast, events::InputEvent, html, html::Scope};
 
+mod countries;
+
+use countries::Country;
+
 pub enum Msg {
-    InputBand(u32),
+    InputUnderBust(u32),
     InputBust(u32),
+    InputBand(u32),
     InputCup(String),
 }
 
 pub struct App {
-    band: u32,
+    under_bust: u32,
     bust: u32,
+    band: u32,
     cup: String,
-    // country?
+    country: Country,
     // inches/cm
     // plus_four
-}
-
-const UK_CUPS: [&str; 47] = [
-    "AA", "A", "B", "C", "D", "DD", "E", "F", "FF", "G", "GG", "H", "HH", "J", "JJ", "K", "KK",
-    "L", "LL", "M", "MM", "N", "NN", "O", "OO", "P", "PP", "Q", "QQ", "R", "RR", "S", "SS", "T",
-    "TT", "U", "UU", "V", "VV", "W", "WW", "X", "XX", "Y", "YY", "Z", "ZZ",
-];
-
-fn get_cup(diff: i32) -> &'static str {
-    if diff < -1 {
-        "Too small"
-    } else if diff == -1 {
-        "AAA"
-    } else if let Some(cup) = UK_CUPS.get(diff as usize) {
-        cup
-    } else {
-        "Too big"
-    }
 }
 
 impl Component for App {
@@ -44,29 +32,52 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let band = 32; // +4?
+        let under_bust = 32; // +4?
         let diff = 5;
+        let country = Country::UK;
         Self {
-            band,
-            bust: band.wrapping_add_signed(diff),
-            cup: get_cup(diff).into(),
+            under_bust,
+            bust: under_bust.wrapping_add_signed(diff),
+            band: under_bust + 4,
+            cup: country.get_cup(diff).into(),
+            country,
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::InputBand(band) => {
-                self.band = band;
-                self.cup = get_cup(self.bust.wrapping_sub(self.band) as i32).into()
+            Msg::InputUnderBust(under_bust) => {
+                self.under_bust = under_bust;
+                self.band = under_bust + 4;
+                self.cup = self
+                    .country
+                    .get_cup(self.bust.wrapping_sub(self.under_bust) as i32)
+                    .into()
             }
             Msg::InputBust(bust) => {
                 self.bust = bust;
-                self.cup = get_cup(self.bust.wrapping_sub(self.band) as i32).into()
+                self.cup = self
+                    .country
+                    .get_cup(self.bust.wrapping_sub(self.under_bust) as i32)
+                    .into()
+            }
+            Msg::InputBand(band) => {
+                self.band = band;
+                self.under_bust = band - 4;
+                self.cup = self
+                    .country
+                    .get_cup(self.bust.wrapping_sub(self.under_bust) as i32)
+                    .into()
             }
             Msg::InputCup(cup) => {
                 self.cup = cup;
-                if let Some(diff) = UK_CUPS.iter().position(|x| *x == self.cup) {
-                    self.bust = self.band.wrapping_add(diff as u32);
+                if let Some(diff) = self
+                    .country
+                    .get_cup_array()
+                    .iter()
+                    .position(|x| *x == self.cup)
+                {
+                    self.bust = self.under_bust.wrapping_add(diff as u32);
                 }
             }
         }
@@ -90,11 +101,15 @@ impl App {
         html! {
           <main>
             <>
-              { self.input_band(ctx.link()) }
+              { self.input_under_bust(ctx.link()) }
             </>
 
             <>
               { self.input_bust(ctx.link()) }
+            </>
+
+            <>
+              { self.input_band(ctx.link()) }
             </>
 
             <>
@@ -106,19 +121,21 @@ impl App {
 }
 
 impl App {
-    fn input_band(&self, link: &Scope<Self>) -> Html {
-        let band = self.band;
+    fn input_under_bust(&self, link: &Scope<Self>) -> Html {
+        let under_bust = self.under_bust;
         let oninput = link.batch_callback(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            Some(Msg::InputBand(input.value().parse().unwrap_or(band)))
+            Some(Msg::InputUnderBust(
+                input.value().parse().unwrap_or(under_bust),
+            ))
         });
-        let value = (self.band/* + 4 */).to_string();
+        let value = self.under_bust.to_string();
 
         html! {
           <div class="input-box">
-            <h2 for="input-band"> { "Band" } </h2>
+            <h2 for="input-under_bust"> { "Under bust" } </h2>
             <input
-              id="input-band"
+              id="input-under_bust"
               type="text"
               {oninput}
               {value}
@@ -140,6 +157,27 @@ impl App {
             <h2 for="input-bust"> { "Bust" } </h2>
             <input
               id="input-bust"
+              type="text"
+              {oninput}
+              {value}
+            />
+          </div>
+        }
+    }
+
+    fn input_band(&self, link: &Scope<Self>) -> Html {
+        let band = self.band;
+        let oninput = link.batch_callback(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            Some(Msg::InputBand(input.value().parse().unwrap_or(band)))
+        });
+        let value = self.band.to_string();
+
+        html! {
+          <div class="input-box">
+            <h2 for="input-band"> { "Band" } </h2>
+            <input
+              id="input-band"
               type="text"
               {oninput}
               {value}
