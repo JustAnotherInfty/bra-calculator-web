@@ -16,16 +16,18 @@ use length::Length;
 pub enum Msg {
     InputUnderBust(Length),
     InputBust(Length),
-    InputBand(u32),
+    InputBand(i32),
     InputCup(String),
+    InputUseInches(bool),
 }
 
 pub struct App {
     under_bust: Length,
     bust: Length,
-    band: u32,
+    band: i32,
     cup: String,
     country: Country,
+    use_inches: bool,
     // inches/cm
     // plus_four
 }
@@ -41,9 +43,10 @@ impl Component for App {
         Self {
             under_bust,
             bust: under_bust + diff,
-            band: (under_bust + Length::Inch(4.0)).into_raw_inch().round() as u32,
+            band: (under_bust + Length::Inch(4.0)).into_raw_inch().round() as i32,
             cup: country.get_cup(diff).into(),
             country,
+            use_inches: true,
         }
     }
 
@@ -51,7 +54,7 @@ impl Component for App {
         match msg {
             Msg::InputUnderBust(under_bust) => {
                 self.under_bust = under_bust;
-                self.band = (under_bust / 2.0).into_raw_inch().round() as u32 * 2 + 4;
+                self.band = (under_bust.into_raw_inch() / 2.0).round() as i32 * 2 + 4;
                 self.cup = self.country.get_cup(self.bust - self.under_bust).into()
             }
             Msg::InputBust(bust) => {
@@ -61,6 +64,11 @@ impl Component for App {
             Msg::InputBand(band) => {
                 self.band = band;
                 self.under_bust = Length::Inch((band - 4) as f32);
+                if self.use_inches {
+                    self.under_bust.toggle_into_inch();
+                } else {
+                    self.under_bust.toggle_into_cm();
+                }
                 self.cup = self.country.get_cup(self.bust - self.under_bust).into()
             }
             Msg::InputCup(cup) => {
@@ -72,6 +80,16 @@ impl Component for App {
                     .position(|x| *x == self.cup)
                 {
                     self.bust = self.under_bust + Length::Inch(diff as f32);
+                }
+            }
+            Msg::InputUseInches(use_inches) => {
+                self.use_inches = use_inches;
+                if self.use_inches {
+                    self.under_bust.toggle_into_inch();
+                    self.bust.toggle_into_inch();
+                } else {
+                    self.under_bust.toggle_into_cm();
+                    self.bust.toggle_into_cm();
                 }
             }
         }
@@ -109,6 +127,10 @@ impl App {
             <>
               { self.input_cup(ctx.link()) }
             </>
+
+            <>
+              { self.input_use_inches(ctx.link()) }
+            </>
           </main>
         }
     }
@@ -121,7 +143,9 @@ impl App {
             let input: HtmlInputElement = e.target_unchecked_into();
             let parsed: Result<f32, _> = input.value().parse();
             Some(Msg::InputUnderBust(
-                parsed.map(Length::Inch).unwrap_or(under_bust),
+                parsed
+                    .map(|x| under_bust.new_same_unit(x))
+                    .unwrap_or(under_bust),
             ))
         });
         let value = self.under_bust.magnitude().to_string();
@@ -144,7 +168,9 @@ impl App {
         let oninput = link.batch_callback(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let parsed: Result<f32, _> = input.value().parse();
-            Some(Msg::InputBust(parsed.map(Length::Inch).unwrap_or(bust)))
+            Some(Msg::InputBust(
+                parsed.map(|x| bust.new_same_unit(x)).unwrap_or(bust),
+            ))
         });
         let value = self.bust.magnitude().to_string();
 
@@ -199,6 +225,26 @@ impl App {
               type="text"
               {oninput}
               {value}
+            />
+          </div>
+        }
+    }
+
+    fn input_use_inches(&self, link: &Scope<Self>) -> Html {
+        let oninput = link.batch_callback(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            Some(Msg::InputUseInches(input.checked()))
+        });
+        let checked = self.use_inches;
+
+        html! {
+          <div class="input-box">
+            <h2 for="input-use-inches"> { "Use inches" } </h2>
+            <input
+              id="input-use-inches"
+              type="checkbox"
+              {oninput}
+              {checked}
             />
           </div>
         }

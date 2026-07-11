@@ -12,6 +12,13 @@ pub enum Length {
 }
 
 impl Length {
+    pub fn new_same_unit(&self, magnitude: f32) -> Self {
+        match self {
+            Self::Cm(_) => Self::Cm(magnitude),
+            Self::Inch(_) => Self::Inch(magnitude),
+        }
+    }
+
     pub fn magnitude(self) -> f32 {
         match self {
             Self::Cm(cm) => cm,
