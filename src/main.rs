@@ -7,19 +7,22 @@ use web_sys::HtmlInputElement;
 use yew::{Component, Context, Html, TargetCast, events::InputEvent, html, html::Scope};
 
 mod countries;
+mod length;
 
 use countries::Country;
 
+use length::Length;
+
 pub enum Msg {
-    InputUnderBust(u32),
-    InputBust(u32),
+    InputUnderBust(Length),
+    InputBust(Length),
     InputBand(u32),
     InputCup(String),
 }
 
 pub struct App {
-    under_bust: u32,
-    bust: u32,
+    under_bust: Length,
+    bust: Length,
     band: u32,
     cup: String,
     country: Country,
@@ -32,13 +35,13 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let under_bust = 32; // +4?
-        let diff = 5;
+        let under_bust = Length::Inch(32.0);
+        let diff = Length::Inch(5.0);
         let country = Country::UK;
         Self {
             under_bust,
-            bust: under_bust.wrapping_add_signed(diff),
-            band: under_bust + 4,
+            bust: under_bust + diff,
+            band: (under_bust + Length::Inch(4.0)).into_raw_inch().round() as u32,
             cup: country.get_cup(diff).into(),
             country,
         }
@@ -48,26 +51,17 @@ impl Component for App {
         match msg {
             Msg::InputUnderBust(under_bust) => {
                 self.under_bust = under_bust;
-                self.band = under_bust + 4;
-                self.cup = self
-                    .country
-                    .get_cup(self.bust.wrapping_sub(self.under_bust) as i32)
-                    .into()
+                self.band = (under_bust / 2.0).into_raw_inch().round() as u32 * 2 + 4;
+                self.cup = self.country.get_cup(self.bust - self.under_bust).into()
             }
             Msg::InputBust(bust) => {
                 self.bust = bust;
-                self.cup = self
-                    .country
-                    .get_cup(self.bust.wrapping_sub(self.under_bust) as i32)
-                    .into()
+                self.cup = self.country.get_cup(self.bust - self.under_bust).into()
             }
             Msg::InputBand(band) => {
                 self.band = band;
-                self.under_bust = band - 4;
-                self.cup = self
-                    .country
-                    .get_cup(self.bust.wrapping_sub(self.under_bust) as i32)
-                    .into()
+                self.under_bust = Length::Inch((band - 4) as f32);
+                self.cup = self.country.get_cup(self.bust - self.under_bust).into()
             }
             Msg::InputCup(cup) => {
                 self.cup = cup;
@@ -77,7 +71,7 @@ impl Component for App {
                     .iter()
                     .position(|x| *x == self.cup)
                 {
-                    self.bust = self.under_bust.wrapping_add(diff as u32);
+                    self.bust = self.under_bust + Length::Inch(diff as f32);
                 }
             }
         }
@@ -125,11 +119,12 @@ impl App {
         let under_bust = self.under_bust;
         let oninput = link.batch_callback(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
+            let parsed: Result<f32, _> = input.value().parse();
             Some(Msg::InputUnderBust(
-                input.value().parse().unwrap_or(under_bust),
+                parsed.map(Length::Inch).unwrap_or(under_bust),
             ))
         });
-        let value = self.under_bust.to_string();
+        let value = self.under_bust.magnitude().to_string();
 
         html! {
           <div class="input-box">
@@ -148,9 +143,10 @@ impl App {
         let bust = self.bust;
         let oninput = link.batch_callback(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            Some(Msg::InputBust(input.value().parse().unwrap_or(bust)))
+            let parsed: Result<f32, _> = input.value().parse();
+            Some(Msg::InputBust(parsed.map(Length::Inch).unwrap_or(bust)))
         });
-        let value = self.bust.to_string();
+        let value = self.bust.magnitude().to_string();
 
         html! {
           <div class="input-box">

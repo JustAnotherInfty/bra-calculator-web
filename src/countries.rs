@@ -1,12 +1,15 @@
 /* SPDX-FileCopyrightText: © 2026 JustAnotherInfty */
 /* SPDX-License-Identifier: MIT OR Apache-2.0 */
 
+use crate::length::Length;
+
 pub enum Country {
     UK,
 }
 
 impl Country {
-    pub fn get_cup(&self, diff: i32) -> &'static str {
+    pub fn get_cup(&self, diff: Length) -> &'static str {
+        let diff = diff.into_raw_inch().round() as i32;
         if diff < -1 {
             "Too small"
         } else if diff == -1 {
