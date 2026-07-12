@@ -17,6 +17,7 @@ pub enum Msg {
     InputBand(String),
     InputCup(String),
     InputUseInches(bool),
+    InputPlusFour(bool),
 }
 
 pub struct App {
@@ -32,12 +33,14 @@ impl Component for App {
     fn create(_ctx: &Context<Self>) -> Self {
         let use_inches = true;
         let country = Country::UK;
+        let plus_four = true;
         let under_bust = 32;
-        let diff = 5;
+        let diff = 5 + 4;
 
         let calculator = Calculator::new(
             use_inches,
             country,
+            plus_four,
             under_bust.to_string(),
             (under_bust + diff).to_string(),
         );
@@ -73,6 +76,11 @@ impl Component for App {
             }
             Msg::InputUseInches(use_inches) => {
                 self.calculator.set_use_inches(use_inches);
+            }
+            Msg::InputPlusFour(plus_four) => {
+                self.calculator.set_plus_four(plus_four);
+                self.band = self.calculator.band(&self.band).to_string();
+                self.cup = self.calculator.cup(&self.cup).to_string();
             }
         }
 
@@ -112,6 +120,10 @@ impl App {
 
             <>
               { self.input_use_inches(ctx.link()) }
+            </>
+
+            <>
+              { self.input_plus_four(ctx.link()) }
             </>
           </main>
         }
@@ -209,6 +221,26 @@ impl App {
         html! {
           <div class="input-box">
             <h2 for="input-use-inches"> { "Use inches" } </h2>
+            <input
+              id="input-use-inches"
+              type="checkbox"
+              {oninput}
+              {checked}
+            />
+          </div>
+        }
+    }
+
+    fn input_plus_four(&self, link: &Scope<Self>) -> Html {
+        let oninput = link.batch_callback(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            Some(Msg::InputPlusFour(input.checked()))
+        });
+        let checked = self.calculator.plus_four();
+
+        html! {
+          <div class="input-box">
+            <h2 for="input-use-inches"> { "+4" } </h2>
             <input
               id="input-use-inches"
               type="checkbox"
