@@ -85,12 +85,11 @@ impl Calculator {
             let diff = diff as f32;
             let under_bust: Result<f32, _> = self.under_bust.parse();
             if let Ok(under_bust) = under_bust {
-                let offset = if self.plus_four { 4.0 } else { 0.0 };
-                let under_bust = under_bust + offset;
+                let offset = Length::Inch(if self.plus_four { 4.0 } else { 0.0 });
                 let bust = if self.use_inches {
-                    under_bust + diff
+                    under_bust + offset.into_raw_inch() + diff
                 } else {
-                    under_bust + Length::Inch(diff).into_raw_cm()
+                    under_bust + offset.into_raw_cm() + Length::Inch(diff).into_raw_cm()
                 };
                 self.bust = f32_round_two_decimals(bust);
             }
