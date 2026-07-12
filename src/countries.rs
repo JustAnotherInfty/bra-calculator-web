@@ -3,6 +3,7 @@
 
 use crate::length::Length;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Country {
     UK,
 }

@@ -12,36 +12,6 @@ pub enum Length {
 }
 
 impl Length {
-    pub fn new_same_unit(&self, magnitude: f32) -> Self {
-        match self {
-            Self::Cm(_) => Self::Cm(magnitude),
-            Self::Inch(_) => Self::Inch(magnitude),
-        }
-    }
-
-    pub fn magnitude(self) -> f32 {
-        match self {
-            Self::Cm(cm) => cm,
-            Self::Inch(inch) => inch,
-        }
-    }
-
-    pub fn toggle_into_cm(&mut self) {
-        let cm = match *self {
-            Self::Cm(cm) => cm,
-            Self::Inch(inch) => inch * CM_PER_INCH,
-        };
-        *self = Self::Cm(cm);
-    }
-
-    pub fn toggle_into_inch(&mut self) {
-        let inch = match *self {
-            Self::Cm(cm) => cm / CM_PER_INCH,
-            Self::Inch(inch) => inch,
-        };
-        *self = Self::Inch(inch);
-    }
-
     pub fn into_raw_cm(self) -> f32 {
         match self {
             Self::Cm(cm) => cm,
