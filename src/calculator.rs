@@ -107,9 +107,18 @@ impl Calculator {
     pub fn under_bust(&self) -> String {
         self.under_bust.clone()
     }
-
     pub fn bust(&self) -> String {
         self.bust.clone()
+    }
+    pub fn bust_diff(&self) -> String {
+        let under_bust: Result<f32, _> = self.under_bust.parse();
+        let bust: Result<f32, _> = self.bust.parse();
+
+        if let (Ok(under_bust), Ok(bust)) = (under_bust, bust) {
+            f32_round_two_decimals(bust - under_bust)
+        } else {
+            "".to_string()
+        }
     }
 
     pub fn band<'a>(&self, old_value: &'a str) -> Cow<'a, str> {

@@ -157,6 +157,7 @@ impl App {
             Some(Msg::InputBust(input.value()))
         });
         let value = self.calculator.bust();
+        let diff = format!("Bust diff: {}", self.calculator.bust_diff());
 
         html! {
           <div class="input-box">
@@ -167,6 +168,10 @@ impl App {
               {oninput}
               {value}
             />
+            <br/>
+            <>
+            { diff }
+            </>
           </div>
         }
     }
