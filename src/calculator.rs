@@ -3,11 +3,14 @@
 
 use std::borrow::Cow;
 
-use crate::{countries::Country, length::Length};
+use crate::{countries::Country, length::Length, length_unit::LengthUnit};
+
+const ZERO_INCHES: Length = Length::new(0.0, LengthUnit::Inch);
+const FOUR_INCHES: Length = Length::new(4.0, LengthUnit::Inch);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Calculator {
-    use_inches: bool,
+    unit: LengthUnit,
     country: Country,
     plus_four: bool,
     under_bust: String,
@@ -16,14 +19,14 @@ pub struct Calculator {
 
 impl Calculator {
     pub const fn new(
-        use_inches: bool,
+        unit: LengthUnit,
         country: Country,
         plus_four: bool,
         under_bust: String,
         bust: String,
     ) -> Self {
         Self {
-            use_inches,
+            unit,
             country,
             plus_four,
             under_bust,
@@ -31,25 +34,17 @@ impl Calculator {
         }
     }
 
-    pub fn set_use_inches(&mut self, use_inches: bool) {
-        let old = self.use_inches;
-        self.use_inches = use_inches;
+    pub fn set_unit(&mut self, unit: LengthUnit) {
+        let old = self.unit;
+        self.unit = unit;
 
         let under_bust: Result<f32, _> = self.under_bust.parse();
         let bust: Result<f32, _> = self.bust.parse();
 
         if let (Ok(under_bust), Ok(bust)) = (under_bust, bust) {
-            let (under_bust, bust) = if old {
-                (Length::Inch(under_bust), Length::Inch(bust))
-            } else {
-                (Length::Cm(under_bust), Length::Cm(bust))
-            };
+            let under_bust = old.convert_to(under_bust, unit);
+            let bust = old.convert_to(bust, unit);
 
-            let (under_bust, bust) = if use_inches {
-                (under_bust.into_raw_inch(), bust.into_raw_inch())
-            } else {
-                (under_bust.into_raw_cm(), bust.into_raw_cm())
-            };
             self.under_bust = str_round_two_decimals(under_bust.to_string());
             self.bust = str_round_two_decimals(bust.to_string());
         }
@@ -68,14 +63,11 @@ impl Calculator {
     pub fn set_band(&mut self, band: &str) {
         let band: Result<f32, _> = band.parse();
         if let Ok(band) = band {
-            let offset = if self.plus_four { 4.0 } else { 0.0 };
-            let under_bust = band - offset;
-            if under_bust > 0.0 {
-                let under_bust = if self.use_inches {
-                    under_bust
-                } else {
-                    Length::Inch(under_bust).into_raw_cm()
-                };
+            let offset = self.plus_four_offset().into_raw_unit(LengthUnit::Inch);
+            let diff = band - offset;
+            if diff > 0.0 {
+                let diff = Length::new(diff, LengthUnit::Inch);
+                let under_bust = diff.into_raw_unit(self.unit);
                 self.under_bust = f32_round_two_decimals(under_bust);
             }
         }
@@ -85,22 +77,28 @@ impl Calculator {
             let diff = diff as f32;
             let under_bust: Result<f32, _> = self.under_bust.parse();
             if let Ok(under_bust) = under_bust {
-                let offset = Length::Inch(if self.plus_four { 4.0 } else { 0.0 });
-                let bust = if self.use_inches {
-                    under_bust + offset.into_raw_inch() + diff
-                } else {
-                    under_bust + offset.into_raw_cm() + Length::Inch(diff).into_raw_cm()
-                };
+                let under_bust = Length::new(under_bust, self.unit);
+                let offset = self.plus_four_offset();
+                let diff = Length::new(diff, LengthUnit::Inch);
+                let bust = (under_bust + offset + diff).into_raw_unit(self.unit);
                 self.bust = f32_round_two_decimals(bust);
             }
         }
     }
 
-    pub fn use_inches(&self) -> bool {
-        self.use_inches
+    pub fn unit(&self) -> LengthUnit {
+        self.unit
     }
     pub fn plus_four(&self) -> bool {
         self.plus_four
+    }
+
+    pub const fn plus_four_offset(&self) -> Length {
+        if self.plus_four {
+            FOUR_INCHES
+        } else {
+            ZERO_INCHES
+        }
     }
 
     pub fn under_bust(&self) -> String {
@@ -124,14 +122,11 @@ impl Calculator {
         let under_bust: Result<f32, _> = self.under_bust.parse();
 
         if let Ok(under_bust) = under_bust {
-            let under_bust = if self.use_inches {
-                Length::Inch(under_bust)
-            } else {
-                Length::Cm(under_bust)
-            };
+            let under_bust = Length::new(under_bust, self.unit);
 
-            let offset = if self.plus_four { 4 } else { 0 };
-            let band = (under_bust.into_raw_inch() / 2.0).round() as i32 * 2 + offset;
+            let offset = self.plus_four_offset();
+            let band =
+                ((under_bust + offset).into_raw_unit(LengthUnit::Inch) / 2.0).round() as i32 * 2;
             Cow::from(band.to_string())
         } else {
             Cow::from(old_value)
@@ -143,13 +138,10 @@ impl Calculator {
         let bust: Result<f32, _> = self.bust.parse();
 
         if let (Ok(under_bust), Ok(bust)) = (under_bust, bust) {
-            let (under_bust, bust) = if self.use_inches {
-                (Length::Inch(under_bust), Length::Inch(bust))
-            } else {
-                (Length::Cm(under_bust), Length::Cm(bust))
-            };
+            let under_bust = Length::new(under_bust, self.unit);
+            let bust = Length::new(bust, self.unit);
 
-            let offset = Length::Inch(if self.plus_four { 4.0 } else { 0.0 });
+            let offset = self.plus_four_offset();
             let diff = bust - (under_bust + offset);
             Cow::from(self.country.get_cup(diff))
         } else {

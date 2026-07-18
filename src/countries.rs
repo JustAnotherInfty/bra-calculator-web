@@ -1,7 +1,7 @@
 /* SPDX-FileCopyrightText: © 2026 JustAnotherInfty */
 /* SPDX-License-Identifier: MIT OR Apache-2.0 */
 
-use crate::length::Length;
+use crate::{length::Length, length_unit::LengthUnit};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Country {
@@ -10,7 +10,7 @@ pub enum Country {
 
 impl Country {
     pub fn get_cup(&self, diff: Length) -> &'static str {
-        let diff = diff.into_raw_inch().round() as i32;
+        let diff = diff.into_raw_unit(LengthUnit::Inch).round() as i32;
         if diff < -1 {
             "Too small"
         } else if diff == -1 {

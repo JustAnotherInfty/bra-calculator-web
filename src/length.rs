@@ -3,27 +3,21 @@
 
 use std::ops::{Add, Div, Mul, Sub};
 
-const CM_PER_INCH: f32 = 2.54;
+use crate::LengthUnit;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum Length {
-    Cm(f32),
-    Inch(f32),
+pub struct Length {
+    magnitude: f32,
+    unit: LengthUnit,
 }
 
 impl Length {
-    pub fn into_raw_cm(self) -> f32 {
-        match self {
-            Self::Cm(cm) => cm,
-            Self::Inch(inch) => inch * CM_PER_INCH,
-        }
+    pub const fn new(magnitude: f32, unit: LengthUnit) -> Self {
+        Self { magnitude, unit }
     }
 
-    pub fn into_raw_inch(self) -> f32 {
-        match self {
-            Self::Cm(cm) => cm / CM_PER_INCH,
-            Self::Inch(inch) => inch,
-        }
+    pub const fn into_raw_unit(self, dst_unit: LengthUnit) -> f32 {
+        self.unit.convert_to(self.magnitude, dst_unit)
     }
 }
 
@@ -31,12 +25,8 @@ impl Add for Length {
     type Output = Length;
 
     fn add(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Self::Cm(a), Self::Cm(b)) => Self::Cm(a + b),
-            (Self::Cm(a), Self::Inch(b)) => Self::Cm(a + b * CM_PER_INCH),
-            (Self::Inch(a), Self::Cm(b)) => Self::Inch(a + b / CM_PER_INCH),
-            (Self::Inch(a), Self::Inch(b)) => Self::Inch(a + b),
-        }
+        let other = rhs.into_raw_unit(self.unit);
+        Self::new(self.magnitude + other, self.unit)
     }
 }
 
@@ -44,12 +34,8 @@ impl Sub for Length {
     type Output = Length;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Self::Cm(a), Self::Cm(b)) => Self::Cm(a - b),
-            (Self::Cm(a), Self::Inch(b)) => Self::Cm(a - b * CM_PER_INCH),
-            (Self::Inch(a), Self::Cm(b)) => Self::Inch(a - b / CM_PER_INCH),
-            (Self::Inch(a), Self::Inch(b)) => Self::Inch(a - b),
-        }
+        let other = rhs.into_raw_unit(self.unit);
+        Self::new(self.magnitude - other, self.unit)
     }
 }
 
@@ -57,10 +43,15 @@ impl Mul<f32> for Length {
     type Output = Length;
 
     fn mul(self, rhs: f32) -> Self::Output {
-        match self {
-            Self::Cm(cm) => Self::Cm(cm * rhs),
-            Self::Inch(inch) => Self::Inch(inch * rhs),
-        }
+        Self::new(self.magnitude * rhs, self.unit)
+    }
+}
+
+impl Mul<Length> for f32 {
+    type Output = Length;
+
+    fn mul(self, rhs: Length) -> Self::Output {
+        Length::mul(rhs, self)
     }
 }
 
@@ -68,9 +59,14 @@ impl Div<f32> for Length {
     type Output = Length;
 
     fn div(self, rhs: f32) -> Self::Output {
-        match self {
-            Self::Cm(cm) => Self::Cm(cm / rhs),
-            Self::Inch(inch) => Self::Inch(inch / rhs),
-        }
+        Self::new(self.magnitude / rhs, self.unit)
+    }
+}
+
+impl Div<Length> for f32 {
+    type Output = Length;
+
+    fn div(self, rhs: Length) -> Self::Output {
+        Length::div(rhs, self)
     }
 }

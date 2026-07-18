@@ -7,9 +7,11 @@ use yew::{Component, Context, Html, TargetCast, events::InputEvent, html, html::
 mod calculator;
 mod countries;
 mod length;
+mod length_unit;
 
 use calculator::Calculator;
 use countries::Country;
+use length_unit::LengthUnit;
 
 pub enum Msg {
     InputUnderBust(String),
@@ -31,14 +33,14 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let use_inches = true;
+        let unit = LengthUnit::Inch;
         let country = Country::UK;
         let plus_four = true;
         let under_bust = 32;
         let diff = 5 + 4;
 
         let calculator = Calculator::new(
-            use_inches,
+            unit,
             country,
             plus_four,
             under_bust.to_string(),
@@ -75,7 +77,12 @@ impl Component for App {
                 self.calculator.set_cup(&self.cup);
             }
             Msg::InputUseInches(use_inches) => {
-                self.calculator.set_use_inches(use_inches);
+                let unit = if use_inches {
+                    LengthUnit::Inch
+                } else {
+                    LengthUnit::Cm
+                };
+                self.calculator.set_unit(unit);
             }
             Msg::InputPlusFour(plus_four) => {
                 self.calculator.set_plus_four(plus_four);
@@ -221,7 +228,7 @@ impl App {
             let input: HtmlInputElement = e.target_unchecked_into();
             Some(Msg::InputUseInches(input.checked()))
         });
-        let checked = self.calculator.use_inches();
+        let checked = self.calculator.unit() == LengthUnit::Inch;
 
         html! {
           <div class="input-box">
