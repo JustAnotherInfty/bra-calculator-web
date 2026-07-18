@@ -24,6 +24,13 @@ impl Country {
         }
     }
 
+    pub fn band_offset(&self) -> Length {
+        match self {
+            Self::UK => Length::new(4.0, self.unit()),
+            Self::JP => Length::new(0.0, self.unit()),
+        }
+    }
+
     pub fn cup_step(&self) -> Length {
         match self {
             Self::UK => Length::new(1.0, self.unit()),
