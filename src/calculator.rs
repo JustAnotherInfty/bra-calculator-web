@@ -161,3 +161,23 @@ fn str_round_two_decimals(value: String) -> String {
 fn f32_round_two_decimals(value: f32) -> String {
     format!("{value:.02}")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::ops::Deref;
+
+    #[test]
+    fn test_uk() {
+        let under_bust = "83.5".to_string();
+        let bust = "107".to_string();
+        let mut calc = Calculator::new(LengthUnit::Cm, Country::UK, true, under_bust, bust);
+
+        calc.set_unit(LengthUnit::Inch);
+        assert_eq!(
+            (calc.band("").deref(), calc.cup("").deref()),
+            ("36", "DD"),
+        );
+    }
+}
