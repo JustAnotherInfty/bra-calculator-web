@@ -1,8 +1,8 @@
 /* SPDX-FileCopyrightText: © 2026 JustAnotherInfty */
 /* SPDX-License-Identifier: MIT OR Apache-2.0 */
 
-use web_sys::HtmlInputElement;
-use yew::{Component, Context, Html, TargetCast, events::InputEvent, html, html::Scope};
+use web_sys::{HtmlInputElement, HtmlSelectElement};
+use yew::{Component, Context, Event, Html, TargetCast, events::InputEvent, html, html::Scope};
 
 mod calculator;
 mod countries;
@@ -20,6 +20,7 @@ pub enum Msg {
     InputCup(String),
     InputUseInches(bool),
     InputPlusFour(bool),
+    InputCountry(Country),
 }
 
 pub struct App {
@@ -89,6 +90,11 @@ impl Component for App {
                 self.band = self.calculator.band(&self.band).to_string();
                 self.cup = self.calculator.cup(&self.cup).to_string();
             }
+            Msg::InputCountry(country) => {
+                self.calculator.set_country(country);
+                self.band = self.calculator.band(&self.band).to_string();
+                self.cup = self.calculator.cup(&self.cup).to_string();
+            }
         }
 
         true
@@ -131,6 +137,10 @@ impl App {
 
             <>
               { self.input_plus_four(ctx.link()) }
+            </>
+
+            <>
+              { self.input_country(ctx.link()) }
             </>
           </main>
         }
@@ -259,6 +269,37 @@ impl App {
               {oninput}
               {checked}
             />
+          </div>
+        }
+    }
+
+    fn input_country(&self, link: &Scope<Self>) -> Html {
+        let onchange = link.batch_callback(move |e: Event| {
+            let select: HtmlSelectElement = e.target_unchecked_into();
+            Some(Msg::InputCountry(Country::from_id(&select.value())))
+        });
+        let current_value = self.calculator.country();
+
+        let elements: Vec<Html> = Country::self_array()
+            .iter()
+            .map(|x| {
+                let selected = x == &current_value;
+
+                html! {
+                    <option value={x.id()} {selected}> { {x.name()} } </option>
+                }
+            })
+            .collect();
+
+        html! {
+          <div class="input-box">
+            <h2 for="input-country"> { "Country" } </h2>
+            <select
+              id="input-country"
+              {onchange}
+            >
+              { elements }
+            </select>
           </div>
         }
     }

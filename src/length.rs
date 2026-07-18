@@ -16,8 +16,26 @@ impl Length {
         Self { magnitude, unit }
     }
 
+    pub const fn unit(&self) -> LengthUnit {
+        self.unit
+    }
+
     pub const fn into_raw_unit(self, dst_unit: LengthUnit) -> f32 {
         self.unit.convert_to(self.magnitude, dst_unit)
+    }
+
+    pub const fn into_raw_self(self) -> f32 {
+        self.into_raw_unit(self.unit)
+    }
+
+    pub const fn divide_by(self, amount: Length) -> f32 {
+        let value = self.into_raw_unit(amount.unit);
+        value / amount.magnitude
+    }
+
+    pub const fn round_to(self, amount: Length) -> f32 {
+        let other_magnitude = amount.magnitude;
+        self.divide_by(amount).round() * other_magnitude
     }
 }
 
@@ -60,13 +78,5 @@ impl Div<f32> for Length {
 
     fn div(self, rhs: f32) -> Self::Output {
         Self::new(self.magnitude / rhs, self.unit)
-    }
-}
-
-impl Div<Length> for f32 {
-    type Output = Length;
-
-    fn div(self, rhs: Length) -> Self::Output {
-        Length::div(rhs, self)
     }
 }
