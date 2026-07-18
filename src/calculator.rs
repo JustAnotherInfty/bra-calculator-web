@@ -85,6 +85,10 @@ impl Calculator {
             }
         }
     }
+    pub fn set_bra(&mut self, band: &str, cup: &str) {
+        self.set_band(band);
+        self.set_cup(cup);
+    }
 
     pub fn unit(&self) -> LengthUnit {
         self.unit

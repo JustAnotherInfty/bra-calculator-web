@@ -70,11 +70,11 @@ impl Component for App {
             }
             Msg::InputBand(band) => {
                 self.band = band;
-                self.calculator.set_band(&self.band);
+                self.calculator.set_bra(&self.band, &self.cup);
             }
             Msg::InputCup(cup) => {
                 self.cup = cup.to_uppercase();
-                self.calculator.set_cup(&self.cup);
+                self.calculator.set_bra(&self.band, &self.cup);
             }
             Msg::InputUseInches(use_inches) => {
                 let unit = if use_inches {
